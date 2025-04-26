@@ -1,0 +1,49 @@
+services:
+  php:
+    build:
+      context: .
+      dockerfile: ./php/Dockerfile
+      target: php_dev
+    container_name: service-php
+    volumes:
+      - ./src:/var/www/html/app
+      - ./php/xdebug.ini:/usr/local/etc/php/conf.d/xdebug.ini:ro
+      - ./php/php.ini-development:/usr/local/etc/php/php.ini:ro
+      - php_socket:/var/run/php
+    env_file:
+      - ./php/.env
+    environment:
+      - XDEBUG_MODE=debug
+      - XDEBUG_CONFIG=remote_host=host.docker.internal
+    extra_hosts:
+      #- "host.docker.internal:host-gateway"
+      - "host.docker.internal:172.29.80.1"
+    networks:
+      - service-network
+
+  db:
+    image: mysql:8.4.4
+    ports:
+      - "3306:3306"
+    container_name: service-db
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-!ChangeMe!}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-app}
+      MYSQL_USER: ${MYSQL_USER:-app}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-!ChangeMe!}
+    volumes:
+      - database_data:/var/lib/mysql:rw
+    networks:
+      - service-network
+
+networks:
+  service-network:
+    driver: bridge
+
+volumes:
+  redis_data:
+    driver: local
+  database_data:
+    driver: local
+  php_socket:
+  redis_socket:
